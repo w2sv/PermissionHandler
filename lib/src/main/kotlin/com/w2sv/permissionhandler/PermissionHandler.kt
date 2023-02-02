@@ -2,93 +2,115 @@
 
 package com.w2sv.permissionhandler
 
+import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.ComponentActivity
-import androidx.activity.result.contract.ActivityResultContracts
-import com.w2sv.androidutils.ActivityCallContractAdministrator
+import androidx.activity.result.contract.ActivityResultContract
+import androidx.core.content.edit
+import com.w2sv.androidutils.ActivityCallContractHandler
+import com.w2sv.permissionhandler.extensions.getAppPreferences
 
-abstract class PermissionHandler(
+abstract class PermissionHandler<I, O>(
     protected val activity: ComponentActivity,
-    protected val permission: String
-) : ActivityCallContractAdministrator.Impl<String, Boolean>(
-    activity,
-    ActivityResultContracts.RequestPermission()
-) {
+    protected val permission: I,
+    resultContract: ActivityResultContract<I, O>,
+    override val registryKey: String
+) : ActivityCallContractHandler.Impl<I, O>(activity, resultContract) {
 
-    /**
-     * Function wrapper either directly running [onPermissionGranted] if permission granted,
-     * otherwise sets [onPermissionGranted] and launches [activityResultCallback]
-     */
-    fun requestPermission(
-        onPermissionGranted: () -> Unit,
-        onPermissionDenied: (() -> Unit)? = null,
-        onDialogClosed: (() -> Unit)? = null
-    ) {
-        if (!requiresGranting)
-            onPermissionGranted()
-        else {
-            this.onPermissionGranted = onPermissionGranted
-            this.onPermissionDenied = onPermissionDenied
-            this.onDialogClosed = onDialogClosed
+    private val sharedPreferencesKey by ::registryKey
 
-            activityResultLauncher.launch(permission)
-        }
-    }
-
-    private val requiresGranting: Boolean
-        get() = requiredByAndroidSdk && activity.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED
-
-    private val requiredByAndroidSdk: Boolean = activity.run {
-        packageManager.getPackageInfoCompat(packageName)
-    }
-        .requestedPermissions
-        .toSet()
-        .contains(permission)
-
-    /**
-     * Temporary callables set before, and cleared on exiting of [activityResultCallback]
-     */
-    private var onPermissionGranted: (() -> Unit)? = null
-    private var onPermissionDenied: (() -> Unit)? = null
-    private var onDialogClosed: (() -> Unit)? = null
-
-    override val registryKey: String = "${this::class.java.name}.$permission"
-
-    override val activityResultCallback: (Boolean) -> Unit = { permissionGranted ->
-        when (permissionGranted) {
-            true -> {
-                if (!permissionRationalSuppressed)
-                    onPermissionDenied()
-                else
-                    onPermissionRationalSuppressed()
-
-                onPermissionDenied?.invoke()
+    protected var permissionPreviouslyRequested: Boolean =
+        activity.getAppPreferences().getBoolean(sharedPreferencesKey, false)
+            .also {
+                println("Retrieved $sharedPreferencesKey=$it")
             }
 
-            false -> onPermissionGranted?.invoke()
+    /**
+     * Temporary callables set before, and cleared on exiting of [resultCallback]
+     */
+    protected var onGranted: (() -> Unit)? = null
+    protected var onDenied: (() -> Unit)? = null
+    protected var onRequestDismissed: (() -> Unit)? = null
+
+    /**
+     * Function wrapper either directly running [onGranted] if permission granted,
+     * otherwise sets [onGranted] and launches [resultCallback]
+     *
+     * @return Boolean indicating whether request dialog has been invoked
+     */
+    fun requestPermissionIfRequired(
+        onGranted: () -> Unit,
+        onDenied: (() -> Unit)? = null,
+        onRequestDismissed: (() -> Unit)? = null
+    ): Boolean =
+        when {
+            permissionGranted -> {
+                onGranted()
+                false
+            }
+            permissionRationalSuppressed -> {
+                onPermissionRationalSuppressed()
+                false
+            }
+            else -> {
+                this.onGranted = onGranted
+                this.onDenied = onDenied
+                this.onRequestDismissed = onRequestDismissed
+
+                resultLauncher.launch(permission)
+                true
+            }
         }
 
-        onDialogClosed?.invoke()
+    abstract val permissionGranted: Boolean
+    abstract val permissionRationalSuppressed: Boolean
+    abstract val requiredByAndroidSdk: Boolean
 
-        onDialogClosed = null
-        onPermissionDenied = null
-        onPermissionGranted = null
+    override val resultCallback: (O) -> Unit = { activityResult ->
+        println("Request result: $activityResult")
+
+        when (permissionGranted(activityResult)) {
+            false -> onDenied?.invoke()
+            true -> onGranted?.invoke()
+        }
+
+        onRequestDismissed?.invoke()
+
+        onRequestDismissed = null
+        onDenied = null
+        onGranted = null
+
+        if (!permissionPreviouslyRequested) {
+            permissionPreviouslyRequested = true
+            activity.getAppPreferences().edit {
+                putBoolean(sharedPreferencesKey, true)
+                println("Wrote $sharedPreferencesKey=true to sharedPreferences")
+            }
+        }
     }
 
-    protected abstract fun onPermissionDenied()
-    protected abstract fun onPermissionRationalSuppressed()
+    protected abstract fun permissionGranted(activityResult: O): Boolean
 
-    val permissionRationalSuppressed: Boolean =
-        !activity.shouldShowRequestPermissionRationale(permission)
+    abstract fun onPermissionRationalSuppressed()
+
+    protected fun packageWideRequestedPermissions(): Set<String> =
+        activity.run {
+            packageManager.getPackageInfoCompat(packageName)
+        }
+            .requestedPermissions
+            .toSet()
+
+    companion object {
+        @JvmStatic
+        protected fun PackageManager.getPackageInfoCompat(packageName: String): PackageInfo =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                getPackageInfo(
+                    packageName,
+                    PackageManager.PackageInfoFlags.of(PackageManager.GET_PERMISSIONS.toLong())
+                )
+            else
+                @Suppress("DEPRECATION")
+                getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
+    }
 }
-
-private fun PackageManager.getPackageInfoCompat(packageName: String) =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-        getPackageInfo(
-            packageName,
-            PackageManager.PackageInfoFlags.of(PackageManager.GET_PERMISSIONS.toLong())
-        )
-    else
-        @Suppress("DEPRECATION")
-        getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
