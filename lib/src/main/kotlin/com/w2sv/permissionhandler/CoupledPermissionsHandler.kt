@@ -7,7 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 
-abstract class AssociatedPermissionsHandler(
+abstract class CoupledPermissionsHandler(
     activity: ComponentActivity,
     permissions: Array<String>,
     classKey: String
