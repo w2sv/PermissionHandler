@@ -2,14 +2,12 @@
 
 package com.w2sv.permissionhandler
 
-import android.content.pm.PackageInfo
-import android.content.pm.PackageManager
-import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.core.content.edit
 import com.w2sv.androidutils.ActivityCallContractHandler
-import com.w2sv.permissionhandler.extensions.getAppPreferences
+import com.w2sv.androidutils.extensions.getDefaultPreferences
+import slimber.log.i
 
 abstract class PermissionHandler<I, O>(
     protected val activity: ComponentActivity,
@@ -21,9 +19,9 @@ abstract class PermissionHandler<I, O>(
     private val sharedPreferencesKey by ::registryKey
 
     protected var permissionPreviouslyRequested: Boolean =
-        activity.getAppPreferences().getBoolean(sharedPreferencesKey, false)
+        activity.getDefaultPreferences().getBoolean(sharedPreferencesKey, false)
             .also {
-                println("Retrieved $sharedPreferencesKey=$it")
+                i { "Retrieved $sharedPreferencesKey.permissionPreviouslyRequested=$it" }
             }
 
     /**
@@ -68,7 +66,7 @@ abstract class PermissionHandler<I, O>(
     abstract val requiredByAndroidSdk: Boolean
 
     override val resultCallback: (O) -> Unit = { activityResult ->
-        println("Request result: $activityResult")
+        i { "Request result: $activityResult" }
 
         when (permissionGranted(activityResult)) {
             false -> onDenied?.invoke()
@@ -83,9 +81,9 @@ abstract class PermissionHandler<I, O>(
 
         if (!permissionPreviouslyRequested) {
             permissionPreviouslyRequested = true
-            activity.getAppPreferences().edit {
+            activity.getDefaultPreferences().edit {
                 putBoolean(sharedPreferencesKey, true)
-                println("Wrote $sharedPreferencesKey=true to sharedPreferences")
+                i { "Wrote $sharedPreferencesKey=true to sharedPreferences" }
             }
         }
     }
@@ -93,24 +91,28 @@ abstract class PermissionHandler<I, O>(
     protected abstract fun permissionGranted(activityResult: O): Boolean
 
     abstract fun onPermissionRationalSuppressed()
+}
 
-    protected fun packageWideRequestedPermissions(): Set<String> =
-        activity.run {
-            packageManager.getPackageInfoCompat(packageName)
-        }
-            .requestedPermissions
-            .toSet()
+fun Iterable<PermissionHandler<*, *>>.requestPermissions(
+    onGranted: () -> Unit,
+    onDenied: (() -> Unit)? = null,
+    onRequestDismissed: (() -> Unit)? = null
+) {
+    iterator().requestPermissions(onGranted, onDenied, onRequestDismissed)
+}
 
-    companion object {
-        @JvmStatic
-        protected fun PackageManager.getPackageInfoCompat(packageName: String): PackageInfo =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-                getPackageInfo(
-                    packageName,
-                    PackageManager.PackageInfoFlags.of(PackageManager.GET_PERMISSIONS.toLong())
-                )
-            else
-                @Suppress("DEPRECATION")
-                getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
+private fun Iterator<PermissionHandler<*, *>>.requestPermissions(
+    onGranted: () -> Unit,
+    onDenied: (() -> Unit)? = null,
+    onRequestDismissed: (() -> Unit)? = null
+) {
+    if (!hasNext()) {
+        onGranted()
+        onRequestDismissed?.invoke()
+    } else {
+        next().requestPermissionIfRequired(
+            onGranted = { requestPermissions(onGranted, onDenied, onRequestDismissed) },
+            onDenied = onDenied
+        )
     }
 }

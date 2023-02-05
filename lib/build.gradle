@@ -46,7 +46,8 @@ afterEvaluate {
 
 dependencies {
     implementation 'androidx.core:core-ktx:1.9.0'
-    implementation 'androidx.activity:activity-ktx:1.7.0-alpha04'
+    implementation 'androidx.activity:activity-ktx:1.6.1'
 
-    implementation 'com.github.w2sv:AndroidUtils:0.0.16-rc1'
+    implementation 'com.github.PaulWoitaschek:Slimber:2.0.0'
+    implementation 'com.github.w2sv:AndroidUtils:0.0.16-rc3'
 }

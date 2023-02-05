@@ -29,7 +29,7 @@ abstract class CoupledPermissionsHandler(
         }
 
     override val requiredByAndroidSdk: Boolean =
-        packageWideRequestedPermissions().let { requestedPermissions ->
+        activity.getPackageWideRequestedPermissions().let { requestedPermissions ->
             permissions.any { requestedPermissions.contains(it) }
         }
 

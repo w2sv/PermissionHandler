@@ -7,7 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 
-abstract class SingularPermissionHandler(
+abstract class SinglePermissionHandler(
     activity: ComponentActivity,
     permission: String,
     classKey: String
@@ -30,7 +30,7 @@ abstract class SingularPermissionHandler(
             permission
         )
 
-    override val requiredByAndroidSdk: Boolean = packageWideRequestedPermissions()
+    override val requiredByAndroidSdk: Boolean = activity.getPackageWideRequestedPermissions()
         .contains(permission)
 
     override fun permissionGranted(activityResult: Boolean): Boolean =
