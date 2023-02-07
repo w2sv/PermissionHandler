@@ -37,7 +37,7 @@ abstract class PermissionHandler<I, O>(
      *
      * @return Boolean indicating whether request dialog has been invoked
      */
-    fun requestPermissionIfRequired(
+    open fun requestPermissionIfRequired(
         onGranted: () -> Unit,
         onDenied: (() -> Unit)? = null,
         onRequestDismissed: (() -> Unit)? = null
