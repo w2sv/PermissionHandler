@@ -7,7 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 
-abstract class SinglePermissionHandler(
+abstract class SingularPermissionHandler(
     activity: ComponentActivity,
     permission: String,
     classKey: String
@@ -18,21 +18,21 @@ abstract class SinglePermissionHandler(
     registryKey = "$classKey.$permission"
 ) {
 
-    override val permissionGranted: Boolean
-        get() = !requiredByAndroidSdk || ActivityCompat.checkSelfPermission(
+    override fun permissionGranted(): Boolean =
+        !requiredByAndroidSdk || ActivityCompat.checkSelfPermission(
             activity,
             permission
         ) == PackageManager.PERMISSION_GRANTED
 
-    override val permissionRationalSuppressed: Boolean
-        get() = permissionPreviouslyRequested && !ActivityCompat.shouldShowRequestPermissionRationale(
+    override fun permissionRationalSuppressed(): Boolean =
+        permissionPreviouslyRequested && !ActivityCompat.shouldShowRequestPermissionRationale(
             activity,
             permission
         )
 
-    override val requiredByAndroidSdk: Boolean = activity.getPackageWideRequestedPermissions()
+    override val requiredByAndroidSdk: Boolean = activity.getPackageUsedPermissions()
         .contains(permission)
 
-    override fun permissionGranted(activityResult: Boolean): Boolean =
+    override fun permissionNewlyGranted(activityResult: Boolean): Boolean =
         activityResult
 }

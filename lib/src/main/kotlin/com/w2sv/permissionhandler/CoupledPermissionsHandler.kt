@@ -18,21 +18,20 @@ abstract class CoupledPermissionsHandler(
     registryKey = "$classKey.${permissions.toList()}"
 ) {
 
-    override val permissionGranted: Boolean
-        get() = !requiredByAndroidSdk || permission.all {
-            ActivityCompat.checkSelfPermission(activity, it) == PackageManager.PERMISSION_GRANTED
-        }
+    override fun permissionGranted(): Boolean = !requiredByAndroidSdk || permission.all {
+        ActivityCompat.checkSelfPermission(activity, it) == PackageManager.PERMISSION_GRANTED
+    }
 
-    override val permissionRationalSuppressed: Boolean
-        get() = permissionPreviouslyRequested && permission.all {
+    override fun permissionRationalSuppressed(): Boolean =
+        permissionPreviouslyRequested && permission.all {
             !ActivityCompat.shouldShowRequestPermissionRationale(activity, it)
         }
 
     override val requiredByAndroidSdk: Boolean =
-        activity.getPackageWideRequestedPermissions().let { requestedPermissions ->
+        activity.getPackageUsedPermissions().let { requestedPermissions ->
             permissions.any { requestedPermissions.contains(it) }
         }
 
-    override fun permissionGranted(activityResult: Map<String, Boolean>): Boolean =
+    override fun permissionNewlyGranted(activityResult: Map<String, Boolean>): Boolean =
         activityResult.values.all { it }
 }

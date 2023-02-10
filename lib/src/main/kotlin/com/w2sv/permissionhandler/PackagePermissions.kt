@@ -5,7 +5,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 
-internal fun Context.getPackageWideRequestedPermissions(): Set<String> =
+internal fun Context.getPackageUsedPermissions(): Set<String> =
     packageManager.getPackageInfoCompat(packageName)
         .requestedPermissions
         .toSet()

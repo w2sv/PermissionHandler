@@ -1,14 +1,14 @@
 plugins {
-    id 'com.android.library'
-    id 'org.jetbrains.kotlin.android'
+    alias libs.plugins.android.library
+    alias libs.plugins.kotlin
     id 'maven-publish'
 }
 
 android {
     namespace 'com.w2sv.permissionhandler'
-    compileSdk rootProject.ext.compileSdk
+    compileSdk libs.versions.compileSdk.get().toInteger()
     defaultConfig {
-        minSdk rootProject.ext.minSdk
+        minSdk libs.versions.minSdk.get().toInteger()
     }
     buildTypes {
         release {
@@ -45,9 +45,9 @@ afterEvaluate {
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.9.0'
-    implementation 'androidx.activity:activity-ktx:1.6.1'
+    implementation libs.androidx.core
+    implementation libs.androidx.activity
 
-    implementation 'com.github.PaulWoitaschek:Slimber:2.0.0'
-    implementation 'com.github.w2sv:AndroidUtils:0.0.16-rc3'
+    implementation libs.slimber
+    api libs.androidutils
 }

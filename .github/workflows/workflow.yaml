@@ -5,8 +5,8 @@ env:
   JAVA_VERSION: 11
 
 jobs:
-  unit-tests:
-    name: Run Unit tests
+  build:
+    name: Build
     runs-on: macos-latest
 
     steps:

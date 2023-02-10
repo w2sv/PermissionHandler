@@ -1,0 +1,17 @@
+[versions]
+kotlin = '1.8.0'
+agp = '7.4.0'
+
+minSdk = '23'
+compileSdk = '33'
+
+[libraries]
+androidx-core = 'androidx.core:core-ktx:1.9.0'
+androidx-activity = 'androidx.activity:activity-ktx:1.6.1'
+
+slimber = 'com.github.PaulWoitaschek:Slimber:2.0.0'
+androidutils = 'com.github.w2sv:AndroidUtils:0.0.16-rc6'
+
+[plugins]
+android-library = { id = 'com.android.library', version.ref = 'agp' }
+kotlin = { id = 'org.jetbrains.kotlin.android', version.ref = 'kotlin' }

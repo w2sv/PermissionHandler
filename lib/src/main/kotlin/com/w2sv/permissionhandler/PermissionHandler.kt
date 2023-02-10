@@ -3,18 +3,29 @@
 package com.w2sv.permissionhandler
 
 import androidx.activity.ComponentActivity
+import androidx.activity.result.ActivityResultRegistry
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.core.content.edit
 import com.w2sv.androidutils.ActivityCallContractHandler
 import com.w2sv.androidutils.extensions.getDefaultPreferences
 import slimber.log.i
 
+/**
+ * @param activity the [ActivityResultRegistry] of which the [ActivityResultContract] will be registered to
+ * @param permission the handled permission(s)
+ * @param resultContract corresponding to respective [PermissionHandler] descendant
+ * @param registryKey used for both the [ActivityResultRegistry] & SharedPreferences
+ */
 abstract class PermissionHandler<I, O>(
     protected val activity: ComponentActivity,
     protected val permission: I,
     resultContract: ActivityResultContract<I, O>,
     override val registryKey: String
 ) : ActivityCallContractHandler.Impl<I, O>(activity, resultContract) {
+
+    /**
+     *  [permissionPreviouslyRequested] retrieval
+     */
 
     private val sharedPreferencesKey by ::registryKey
 
@@ -25,17 +36,26 @@ abstract class PermissionHandler<I, O>(
             }
 
     /**
-     * Temporary callables set before, and cleared on exiting of [resultCallback]
+     * Sets [permissionPreviouslyRequested] & writes to default preferences.
      */
-    protected var onGranted: (() -> Unit)? = null
-    protected var onDenied: (() -> Unit)? = null
-    protected var onRequestDismissed: (() -> Unit)? = null
+    private fun onFirstEverRequestDismissed(){
+        permissionPreviouslyRequested = true
+        activity.getDefaultPreferences().edit {
+            putBoolean(sharedPreferencesKey, true)
+            i { "Wrote $sharedPreferencesKey=true to sharedPreferences" }
+        }
+    }
 
     /**
-     * Function wrapper either directly running [onGranted] if permission granted,
-     * otherwise sets [onGranted] and launches [resultCallback]
+     * Runs [onGranted] if [permission] already granted OR
+     * Calls [onPermissionRationalSuppressed] if applicable OR
+     * launches permission request after setting passed result callbacks.
      *
-     * @return Boolean indicating whether request dialog has been invoked
+     * @param onGranted Invoked upon permission already or newly granted
+     * @param onDenied Invoked upon permission requested and denied
+     * @param onRequestDismissed Invoked upon permission request being dismissed, regardless of its outcome
+     *
+     * @return Boolean, indicating whether user has been prompted with request
      */
     open fun requestPermissionIfRequired(
         onGranted: () -> Unit,
@@ -43,14 +63,16 @@ abstract class PermissionHandler<I, O>(
         onRequestDismissed: (() -> Unit)? = null
     ): Boolean =
         when {
-            permissionGranted -> {
+            permissionGranted() -> {
                 onGranted()
                 false
             }
-            permissionRationalSuppressed -> {
+
+            permissionRationalSuppressed() -> {
                 onPermissionRationalSuppressed()
                 false
             }
+
             else -> {
                 this.onGranted = onGranted
                 this.onDenied = onDenied
@@ -61,14 +83,34 @@ abstract class PermissionHandler<I, O>(
             }
         }
 
-    abstract val permissionGranted: Boolean
-    abstract val permissionRationalSuppressed: Boolean
-    abstract val requiredByAndroidSdk: Boolean
+    abstract fun permissionGranted(): Boolean
+    abstract fun permissionRationalSuppressed(): Boolean
+    protected abstract val requiredByAndroidSdk: Boolean
 
+    /**
+     * Override to provide callback for permission request being attempted to launch,
+     * however is suppressed.
+     */
+    open fun onPermissionRationalSuppressed() {}
+
+    /**
+     * Temporary callables set before, and cleared on exiting of [resultCallback]
+     */
+
+    private var onGranted: (() -> Unit)? = null
+    private var onDenied: (() -> Unit)? = null
+    private var onRequestDismissed: (() -> Unit)? = null
+
+    /**
+     * Invokes ([onGranted] OR [onDenied]) AND [onRequestDismissed], if respectively set;
+     * Resets [onGranted], [onDenied], [onRequestDismissed];
+     *
+     * Invokes [onFirstEverRequestDismissed] if applicable.
+     */
     override val resultCallback: (O) -> Unit = { activityResult ->
         i { "Request result: $activityResult" }
 
-        when (permissionGranted(activityResult)) {
+        when (permissionNewlyGranted(activityResult)) {
             false -> onDenied?.invoke()
             true -> onGranted?.invoke()
         }
@@ -80,39 +122,9 @@ abstract class PermissionHandler<I, O>(
         onGranted = null
 
         if (!permissionPreviouslyRequested) {
-            permissionPreviouslyRequested = true
-            activity.getDefaultPreferences().edit {
-                putBoolean(sharedPreferencesKey, true)
-                i { "Wrote $sharedPreferencesKey=true to sharedPreferences" }
-            }
+            onFirstEverRequestDismissed()
         }
     }
 
-    protected abstract fun permissionGranted(activityResult: O): Boolean
-
-    abstract fun onPermissionRationalSuppressed()
-}
-
-fun Iterable<PermissionHandler<*, *>>.requestPermissions(
-    onGranted: () -> Unit,
-    onDenied: (() -> Unit)? = null,
-    onRequestDismissed: (() -> Unit)? = null
-) {
-    iterator().requestPermissions(onGranted, onDenied, onRequestDismissed)
-}
-
-private fun Iterator<PermissionHandler<*, *>>.requestPermissions(
-    onGranted: () -> Unit,
-    onDenied: (() -> Unit)? = null,
-    onRequestDismissed: (() -> Unit)? = null
-) {
-    if (!hasNext()) {
-        onGranted()
-        onRequestDismissed?.invoke()
-    } else {
-        next().requestPermissionIfRequired(
-            onGranted = { requestPermissions(onGranted, onDenied, onRequestDismissed) },
-            onDenied = onDenied
-        )
-    }
+    protected abstract fun permissionNewlyGranted(activityResult: O): Boolean
 }
