@@ -2,7 +2,7 @@
 
 package com.w2sv.permissionhandler
 
-fun Iterable<PermissionHandler<*, *>>.requestPermissions(
+fun Iterable<AbstractPermissionHandler<*, *>>.requestPermissions(
     onGranted: () -> Unit,
     onDenied: (() -> Unit)? = null,
     onRequestDismissed: (() -> Unit)? = null
@@ -10,7 +10,7 @@ fun Iterable<PermissionHandler<*, *>>.requestPermissions(
     iterator().requestPermissions(onGranted, onDenied, onRequestDismissed)
 }
 
-private fun Iterator<PermissionHandler<*, *>>.requestPermissions(
+private fun Iterator<AbstractPermissionHandler<*, *>>.requestPermissions(
     onGranted: () -> Unit,
     onDenied: (() -> Unit)? = null,
     onRequestDismissed: (() -> Unit)? = null

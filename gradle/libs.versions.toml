@@ -1,13 +1,18 @@
 [versions]
-kotlin = '1.8.0'
-agp = '7.4.0'
+kotlin = '2.0.10'
+agp = '8.5.2'
 
 minSdk = '23'
-compileSdk = '33'
+compileSdk = '35'
+
+androidutils = "0.4.2-rc2"
 
 [libraries]
-androidx-core = 'androidx.core:core-ktx:1.9.0'
-androidx-activity = 'androidx.activity:activity-ktx:1.6.1'
+androidutils-core = { module = "com.github.w2sv.AndroidUtils:core", version.ref = "androidutils" }
+androidutils-lifecycle = { module = "com.github.w2sv.AndroidUtils:lifecycle", version.ref = "androidutils" }
+
+androidx-core = 'androidx.core:core-ktx:1.13.1'
+androidx-activity = 'androidx.activity:activity-ktx:1.9.1'
 
 slimber = 'com.github.PaulWoitaschek:Slimber:2.0.0'
 androidutils = 'com.github.w2sv:AndroidUtils:0.0.16-rc6'

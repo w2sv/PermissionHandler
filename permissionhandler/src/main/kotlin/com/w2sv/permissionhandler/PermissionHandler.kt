@@ -6,16 +6,22 @@ import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
+import com.w2sv.androidutils.getPackagePermissions
+import kotlinx.coroutines.flow.StateFlow
 
-abstract class SingularPermissionHandler(
+abstract class PermissionHandler(
     activity: ComponentActivity,
     permission: String,
-    classKey: String
-) : PermissionHandler<String, Boolean>(
-    activity,
-    permission,
+    classKey: String,
+    permissionPreviouslyRequested: StateFlow<Boolean>,
+    savePermissionPreviouslyRequested: () -> Unit
+) : AbstractPermissionHandler<String, Boolean>(
+    activity = activity,
+    permission = permission,
     resultContract = ActivityResultContracts.RequestPermission(),
-    registryKey = "$classKey.$permission"
+    registryKey = "$classKey.$permission",
+    permissionPreviouslyRequested = permissionPreviouslyRequested,
+    savePermissionPreviouslyRequested = savePermissionPreviouslyRequested
 ) {
 
     override fun permissionGranted(): Boolean =
@@ -25,13 +31,15 @@ abstract class SingularPermissionHandler(
         ) == PackageManager.PERMISSION_GRANTED
 
     override fun permissionRationalSuppressed(): Boolean =
-        permissionPreviouslyRequested && !ActivityCompat.shouldShowRequestPermissionRationale(
+        permissionPreviouslyRequested.value && !ActivityCompat.shouldShowRequestPermissionRationale(
             activity,
             permission
         )
 
-    override val requiredByAndroidSdk: Boolean = activity.getPackageUsedPermissions()
-        .contains(permission)
+    override val requiredByAndroidSdk: Boolean =
+        activity
+            .getPackagePermissions()
+            .contains(permission)
 
     override fun permissionNewlyGranted(activityResult: Boolean): Boolean =
         activityResult

@@ -6,16 +6,22 @@ import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
+import com.w2sv.androidutils.getPackagePermissions
+import kotlinx.coroutines.flow.StateFlow
 
 abstract class CoupledPermissionsHandler(
     activity: ComponentActivity,
     permissions: Array<String>,
-    classKey: String
-) : PermissionHandler<Array<String>, Map<String, Boolean>>(
-    activity,
-    permissions,
+    classKey: String,
+    permissionPreviouslyRequested: StateFlow<Boolean>,
+    savePermissionPreviouslyRequested: () -> Unit
+) : AbstractPermissionHandler<Array<String>, Map<String, Boolean>>(
+    activity = activity,
+    permission = permissions,
     resultContract = ActivityResultContracts.RequestMultiplePermissions(),
-    registryKey = "$classKey.${permissions.toList()}"
+    registryKey = "$classKey.${permissions.toList()}",
+    permissionPreviouslyRequested = permissionPreviouslyRequested,
+    savePermissionPreviouslyRequested = savePermissionPreviouslyRequested
 ) {
 
     override fun permissionGranted(): Boolean = !requiredByAndroidSdk || permission.all {
@@ -23,12 +29,12 @@ abstract class CoupledPermissionsHandler(
     }
 
     override fun permissionRationalSuppressed(): Boolean =
-        permissionPreviouslyRequested && permission.all {
+        permissionPreviouslyRequested.value && permission.all {
             !ActivityCompat.shouldShowRequestPermissionRationale(activity, it)
         }
 
     override val requiredByAndroidSdk: Boolean =
-        activity.getPackageUsedPermissions().let { requestedPermissions ->
+        activity.getPackagePermissions().let { requestedPermissions ->
             permissions.any { requestedPermissions.contains(it) }
         }
 
