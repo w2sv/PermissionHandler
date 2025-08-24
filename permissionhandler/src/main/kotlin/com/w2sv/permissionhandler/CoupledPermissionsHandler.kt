@@ -23,15 +23,17 @@ abstract class CoupledPermissionsHandler(
     permissionPreviouslyRequested = permissionPreviouslyRequested,
     savePermissionPreviouslyRequested = savePermissionPreviouslyRequested
 ) {
-
-    override fun permissionGranted(): Boolean = !requiredByAndroidSdk || permission.all {
-        ActivityCompat.checkSelfPermission(activity, it) == PackageManager.PERMISSION_GRANTED
-    }
+    override fun permissionGranted(): Boolean =
+        !requiredByAndroidSdk ||
+            permission.all {
+                ActivityCompat.checkSelfPermission(activity, it) == PackageManager.PERMISSION_GRANTED
+            }
 
     override fun permissionRationalSuppressed(): Boolean =
-        permissionPreviouslyRequested.value && permission.all {
-            !ActivityCompat.shouldShowRequestPermissionRationale(activity, it)
-        }
+        permissionPreviouslyRequested.value &&
+            permission.all {
+                !ActivityCompat.shouldShowRequestPermissionRationale(activity, it)
+            }
 
     override val requiredByAndroidSdk: Boolean =
         activity.getPackagePermissions().let { requestedPermissions ->

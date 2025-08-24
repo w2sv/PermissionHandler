@@ -23,18 +23,19 @@ abstract class PermissionHandler(
     permissionPreviouslyRequested = permissionPreviouslyRequested,
     savePermissionPreviouslyRequested = savePermissionPreviouslyRequested
 ) {
-
     override fun permissionGranted(): Boolean =
-        !requiredByAndroidSdk || ActivityCompat.checkSelfPermission(
-            activity,
-            permission
-        ) == PackageManager.PERMISSION_GRANTED
+        !requiredByAndroidSdk ||
+            ActivityCompat.checkSelfPermission(
+                activity,
+                permission
+            ) == PackageManager.PERMISSION_GRANTED
 
     override fun permissionRationalSuppressed(): Boolean =
-        permissionPreviouslyRequested.value && !ActivityCompat.shouldShowRequestPermissionRationale(
-            activity,
-            permission
-        )
+        permissionPreviouslyRequested.value &&
+            !ActivityCompat.shouldShowRequestPermissionRationale(
+                activity,
+                permission
+            )
 
     override val requiredByAndroidSdk: Boolean =
         activity

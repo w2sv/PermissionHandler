@@ -23,7 +23,6 @@ abstract class AbstractPermissionHandler<I, O>(
     protected val permissionPreviouslyRequested: StateFlow<Boolean>,
     private val savePermissionPreviouslyRequested: () -> Unit
 ) : ActivityCallContractHandler.Impl<I, O>(activity, resultContract) {
-
     /**
      * Runs [onGranted] if [permission] already granted OR
      * Calls [onPermissionRationalSuppressed] if applicable OR
@@ -62,7 +61,9 @@ abstract class AbstractPermissionHandler<I, O>(
         }
 
     abstract fun permissionGranted(): Boolean
+
     abstract fun permissionRationalSuppressed(): Boolean
+
     protected abstract val requiredByAndroidSdk: Boolean
 
     /**
