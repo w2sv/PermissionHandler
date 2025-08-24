@@ -1,5 +1,14 @@
 SHELL=/bin/bash
 
+update-dependencies:
+	@./gradlew versionCatalogUpdate
+
+update-gradle:
+	@./gradlew wrapper --gradle-version latest
+
+format:
+	@./gradlew ktlintFormat
+
 VERSION := $(shell grep -Po '^version=\K.*' gradle.properties)
 
 publish:

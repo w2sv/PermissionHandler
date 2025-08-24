@@ -1,22 +1,23 @@
 [versions]
-kotlin = '2.0.10'
-agp = '8.5.2'
-
-minSdk = '23'
-compileSdk = '35'
-
-androidutils = "0.4.2-rc2"
+agp = "8.12.1"
+# @keep
+compileSdk = "36"
+kotlin = "2.2.10"
+ktlint = "13.1.0"
+# @keep
+minSdk = "23"
+versionCatalogUpdate = "1.0.0"
+w2sv-androidutils = "0.4.6"
 
 [libraries]
-androidutils-core = { module = "com.github.w2sv.AndroidUtils:core", version.ref = "androidutils" }
-androidutils-lifecycle = { module = "com.github.w2sv.AndroidUtils:lifecycle", version.ref = "androidutils" }
-
-androidx-core = 'androidx.core:core-ktx:1.13.1'
-androidx-activity = 'androidx.activity:activity-ktx:1.9.1'
-
-slimber = 'com.github.PaulWoitaschek:Slimber:2.0.0'
-androidutils = 'com.github.w2sv:AndroidUtils:0.0.16-rc6'
+androidx-activity = "androidx.activity:activity-ktx:1.10.1"
+androidx-core = "androidx.core:core-ktx:1.17.0"
+slimber = "com.github.PaulWoitaschek:Slimber:2.0.0"
+w2sv-androidutils-core = { module = "com.github.w2sv.AndroidUtils:core", version.ref = "w2sv-androidutils" }
+w2sv-androidutils-lifecycle = { module = "com.github.w2sv.AndroidUtils:lifecycle", version.ref = "w2sv-androidutils" }
 
 [plugins]
-android-library = { id = 'com.android.library', version.ref = 'agp' }
-kotlin = { id = 'org.jetbrains.kotlin.android', version.ref = 'kotlin' }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+versionCatalogUpdate = { id = "nl.littlerobots.version-catalog-update", version.ref = "versionCatalogUpdate" }
