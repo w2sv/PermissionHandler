@@ -37,7 +37,7 @@ abstract class CoupledPermissionsHandler(
 
     override val requiredByAndroidSdk: Boolean =
         activity.getPackagePermissions().let { requestedPermissions ->
-            permissions.any { requestedPermissions.contains(it) }
+            permissions.any { requestedPermissions?.contains(it) == true }
         }
 
     override fun permissionNewlyGranted(activityResult: Map<String, Boolean>): Boolean =

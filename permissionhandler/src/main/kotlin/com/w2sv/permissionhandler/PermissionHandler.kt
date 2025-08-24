@@ -40,7 +40,7 @@ abstract class PermissionHandler(
     override val requiredByAndroidSdk: Boolean =
         activity
             .getPackagePermissions()
-            .contains(permission)
+            ?.contains(permission) == true
 
     override fun permissionNewlyGranted(activityResult: Boolean): Boolean =
         activityResult
